@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>slide</title>
+<link href="css/style.css" rel="stylesheet" type="text/css">
+	<link href="css/animate.min.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="js/jquery-3.6.0.min.js"></script>
+</head>
+<body  id="body-container">
+<div id="main">
+	<img src="media/images/bg.png" alt="">
+</div>
+<script>
+let wrapper = document.getElementById('body-container');
+let outer = document.getElementById('main');
+let maxWidth = outer.clientWidth;
+let maxHeight = outer.clientHeight;
+
+ 
+window.addEventListener("resize", resize);
+resize();
+ 
+
+function resize() {
+    let scale,
+        width = window.innerWidth,
+        height = window.innerHeight;
+    scale = Math.min(width / maxWidth, height / maxHeight);
+    outer.style.transform = 'scale(' + scale + ')';
+}
+
+</script>
+</body>
+</html>
