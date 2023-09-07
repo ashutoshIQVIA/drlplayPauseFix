@@ -310,19 +310,104 @@
         }
     }
 
+    let enableTrackingAfterPause = false;
+    let disablePlayButton = false
+    let disabledTrackingTime
+    let enableTrackingTime
+
     function disableTracking() {
-        trackingValue = false;
-        previousSlide.start = '';
-        previousSlide.product = '';
-        previousSlide.slide = '';
-        previousSlide.message = '';
-        previousSlide.reference = '';
+        trackingValue = true;
+        disabledTrackingTime = new Date();
+        enableTrackingAfterPause = true;
     }
 
     function enableTracking() {
-        trackingValue = true;
-
+        disablePlayButton = true
+        trackingValue = false;
+        enableTrackingTime = new Date();
+        enableTrackingAfterPause = false
     }
+
+
+    function trackClickStream(currentTime) {
+        if (trackingValue) {
+            let currentDuration = diff_minutes(
+                disabledTrackingTime,
+                previousSlide.start
+            );
+            clickStreamRAWData.push({
+                currentDuration: currentDuration,
+                previousSlide: previousSlide.start,
+                currentSlideTime: currentTime,
+                previousSlide: previousSlide.slide,
+                PreviousProduct: previousSlide.product,
+                PreviousMessage: previousSlide.message
+            })
+            trackingValue = false;
+        }
+    }
+
+
+    function calculateStartTime(currentTime) {
+        if (disablePlayButton) {
+            let currentDuration = diff_minutes(
+                new Date(),
+                enableTrackingTime
+            );
+            clickStreamRAWData.push({
+                currentDuration: currentDuration,
+                previousSlideTime: previousSlide.start,
+                currentSlideTime: currentTime,
+                previousSlide: previousSlide.slide,
+                PreviousProduct: previousSlide.product,
+                PreviousMessage: previousSlide.message
+            })
+            disablePlayButton = false
+        }
+    }
+
+    function initiateClickStream() {
+        if (callIDUpsert) {
+            let productOrder = {
+                // slideOrder: slideIorder + 1,
+                productId: previousSlide.product,
+                productRefdata: previousSlide.reference
+            };
+
+            if (previousSlide.product !== '') {
+                productData.push(productOrder);
+            }
+
+            let messageData = {
+                productId: previousSlide.product,
+                messageId: previousSlide.message
+            };
+
+            if (previousSlide.message == '' || previousSlide.message == null || previousSlide.message == 'null') {
+            }
+            else {
+                let productmessageIndex = productmessagedataDb.findIndex(ele => ele.OCE__ProductMessage__c == previousSlide.message)
+                if (productmessageIndex < 0) {
+                    // CLMPlayer.alert("message is:" + DRLProductMessage[index] + "-Length-" + productMessageData.length)
+                    productMessageData.push(messageData);
+                    // CLMPlayer.alert("data is +" + previousSlide.message)
+                } else {
+                    // CLMPlayer.alert("This data already present" + previousSlide.message + "Length is :" + productMessageData.length)
+                }
+            }
+        }
+
+        clickStreamRAWData.push({
+            currentDuration: currentDuration,
+            previousSlideTime: previousSlide.start,
+            currentSlideTime: currentSlide.start,
+            previousSlide: previousSlide.slide,
+            PreviousProduct: previousSlide.product,
+            PreviousMessage: previousSlide.message
+        })
+    }
+
+
     // THis is the main logic which loads the iframe based on events
     function updateIfram(slideIndex, anchorId, slideName) {
 
@@ -349,53 +434,17 @@
                         currentSlide.start,
                         previousSlide.start
                     );
-                    let endSlide = currentSlide.start;
-
-                    if (currentDuration >= 1 && trackingValue) {
-                        if (callIDUpsert) {
-                            let productOrder = {
-                                // slideOrder: slideIorder + 1,
-                                productId: previousSlide.product,
-                                productRefdata: previousSlide.reference
-                            };
-
-                            if (previousSlide.product !== '') {
-                                productData.push(productOrder);
-                            }
-
-                            let messageData = {
-                                productId: previousSlide.product,
-                                messageId: previousSlide.message
-                            };
-
-                            if (previousSlide.message == '' || previousSlide.message == null || previousSlide.message == 'null') {
-                            }
-                            else {
-                                let productmessageIndex = productmessagedataDb.findIndex(ele => ele.OCE__ProductMessage__c == previousSlide.message)
-                                if (productmessageIndex < 0) {
-                                    // CLMPlayer.alert("message is:" + DRLProductMessage[index] + "-Length-" + productMessageData.length)
-                                    productMessageData.push(messageData);
-                                    // CLMPlayer.alert("data is +" + previousSlide.message)
-                                } else {
-                                    // CLMPlayer.alert("This data already present" + previousSlide.message + "Length is :" + productMessageData.length)
-                                }
-                            }
-
+                    // CLMPlayer.alert(currentDuration + previousSlide.start)
+                    if (currentDuration >= 1) {
+                        if (enableTrackingAfterPause) {
+                            trackClickStream(new Date())
+                        } else if (disablePlayButton) {
+                            calculateStartTime(new Date())
+                        } else {
+                            initiateClickStream()
                         }
-
-                        clickStreamRAWData.push({
-                            currentDuration: currentDuration,
-                            previousSlideTime: previousSlide.start,
-                            currentSlideTime: currentSlide.start,
-                            previousSlide: previousSlide.slide,
-                            PreviousProduct: previousSlide.product,
-                            PreviousMessage: previousSlide.message
-                        })
-
                     }
                 }
-
-
 
                 previousSlide.start = new Date();
                 previousSlide.product = DRLProduct[index];
