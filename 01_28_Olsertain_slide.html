@@ -319,57 +319,46 @@
         trackingValue = true;
         disabledTrackingTime = new Date();
         enableTrackingAfterPause = true;
+        disablePlayButton = false
     }
 
     function enableTracking() {
         disablePlayButton = true
-        trackingValue = false;
+        trackingValue = true;
         enableTrackingTime = new Date();
         enableTrackingAfterPause = false
     }
 
 
-    function trackClickStream(currentTime) {
-        if (trackingValue) {
-            let currentDuration = diff_minutes(
-                disabledTrackingTime,
+    function trackClickStream(currentTime, actualTrackingTime, trackingEvent) {
+        let timeDifference
+        if (trackingEvent == "disable") { //if disable tracking condition applied
+            enableTrackingAfterPause = false; //this the the global variable
+            trackingValue = false;
+            timeDifference = diff_minutes(
+                actualTrackingTime,
                 previousSlide.start
             );
-            clickStreamRAWData.push({
-                currentDuration: currentDuration,
-                previousSlide: previousSlide.start,
-                currentSlideTime: currentTime,
-                previousSlide: previousSlide.slide,
-                PreviousProduct: previousSlide.product,
-                PreviousMessage: previousSlide.message
-            })
-            trackingValue = false;
-        }
-    }
-
-
-    function calculateStartTime(currentTime) {
-        if (disablePlayButton) {
-            let currentDuration = diff_minutes(
+            CLMPlayer.alert("Disable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide,)
+        } else if (trackingEvent == "enable") { //if enable tracking condition applied
+            trackingValue = true; //this is the global variable
+            disablePlayButton = false; //this is the global variable
+            timeDifference = diff_minutes(
                 new Date(),
-                enableTrackingTime
+                actualTrackingTime
             );
-            clickStreamRAWData.push({
-                currentDuration: currentDuration,
-                previousSlideTime: previousSlide.start,
-                currentSlideTime: currentTime,
-                previousSlide: previousSlide.slide,
-                PreviousProduct: previousSlide.product,
-                PreviousMessage: previousSlide.message
-            })
-            disablePlayButton = false
-        }
-    }
+            CLMPlayer.alert("Enable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide,)
 
-    function initiateClickStream() {
+        } else {
+            timeDifference = diff_minutes(
+                new Date(),
+                actualTrackingTime)
+                CLMPlayer.alert("Data Added, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide,)
+
+        }
+
         if (callIDUpsert) {
             let productOrder = {
-                // slideOrder: slideIorder + 1,
                 productId: previousSlide.product,
                 productRefdata: previousSlide.reference
             };
@@ -398,19 +387,18 @@
         }
 
         clickStreamRAWData.push({
-            currentDuration: currentDuration,
+            currentDuration: timeDifference,
             previousSlideTime: previousSlide.start,
             currentSlideTime: currentSlide.start,
             previousSlide: previousSlide.slide,
             PreviousProduct: previousSlide.product,
             PreviousMessage: previousSlide.message
         })
-    }
 
+    }
 
     // THis is the main logic which loads the iframe based on events
     function updateIfram(slideIndex, anchorId, slideName) {
-
         if (slideIndex == undefined || slideName == undefined) {
         }
         let slide = slideName ? slideName : slideIndex;
@@ -435,17 +423,16 @@
                         previousSlide.start
                     );
                     // CLMPlayer.alert(currentDuration + previousSlide.start)
-                    if (currentDuration >= 1) {
+                    if (currentDuration >= 1 && trackingValue) {
                         if (enableTrackingAfterPause) {
-                            trackClickStream(new Date())
+                            trackClickStream(new Date(), disabledTrackingTime, "disable")
                         } else if (disablePlayButton) {
-                            calculateStartTime(new Date())
+                            trackClickStream(new Date(), enableTrackingTime, "enable")
                         } else {
-                            initiateClickStream()
+                            trackClickStream(new Date(), previousSlide.start)
                         }
                     }
                 }
-
                 previousSlide.start = new Date();
                 previousSlide.product = DRLProduct[index];
                 previousSlide.slide = slide;
@@ -456,7 +443,6 @@
                 // CLMPlayer.alert("Error occured:" + err); //uncomment
             }
             // this is end for the click stream //
-
             for (i = 0; i < sequenceData.length; i++) {
                 if (sequenceData[i].trim() == slide) {
                     // console.log(sequenceData[i].trim() + "clicked");
