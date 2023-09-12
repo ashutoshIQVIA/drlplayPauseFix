@@ -307,11 +307,28 @@
     let disablePlayButton = false
     let disabledTrackingTime
     let enableTrackingTime
+    let loopThroughPausebutton = false
+    let calculatedTme = 0
 
     //this function will invoke on disabling the tracking
     function disableTracking() {
+        if (disablePlayButton && loopThroughPausebutton) {
+            CLMPlayer.alert(calculatedTme + "currentTime" + new Date() + "lastdiabled" + disabledTrackingTime)
+            calculatedTme = calculatedTme + diff_minutes(
+                new Date(),
+                disabledTrackingTime)
+            disabledTrackingTime = new Date();
+
+
+        } else {
+            calculatedTme = 0
+            disabledTrackingTime = new Date();
+            calculatedTme = diff_minutes(
+                disabledTrackingTime,
+                previousSlide.start
+            );
+        }
         trackingValue = true;
-        disabledTrackingTime = new Date();
         enableTrackingAfterPause = true;
         disablePlayButton = false
     }
@@ -319,37 +336,46 @@
 
     //this function will invoke on enabling the tracking
     function enableTracking() {
+        if (enableTrackingAfterPause) {
+            disabledTrackingTime = new Date();
+            CLMPlayer.alert("changed from pause to play on same slide")
+        }
         disablePlayButton = true
         trackingValue = true;
         enableTrackingTime = new Date();
         enableTrackingAfterPause = false
+        loopThroughPausebutton = true
+
     }
 
-//this is the function which created the array for clickstream, calldetails and call messages
+    //this is the function which created the array for clickstream, calldetails and call messages
     function trackClickStream(currentTime, actualTrackingTime, trackingEvent) {
         let timeDifference
         if (trackingEvent == "disable") { //if disable tracking condition applied
-            enableTrackingAfterPause = false; //this the the global variable
+            // enableTrackingAfterPause = false; //this the the global variable
             trackingValue = false;
-            timeDifference = diff_minutes(
-                actualTrackingTime,
-                previousSlide.start
-            );
-            // CLMPlayer.alert("Disable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide,)
+            timeDifference = calculatedTme;
+            calculatedTme = 0;
+            // disablePlayButton = false
+            CLMPlayer.alert("here is the time diff :" + timeDifference + " Disable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
         } else if (trackingEvent == "enable") { //if enable tracking condition applied
             trackingValue = true; //this is the global variable
-            disablePlayButton = false; //this is the global variable
-            timeDifference = diff_minutes(
+            loopThroughPausebutton = false
+
+            // disablePlayButton = false; //this is the global variable
+            timeDifference = calculatedTme + diff_minutes(
                 currentTime,
                 actualTrackingTime
             );
-            // CLMPlayer.alert("Enable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide,)
-
+            calculatedTme = 0
+            CLMPlayer.alert(timeDifference + "calculated time is :" + calculatedTme + " currenttime: " + currentTime + "actualTrackingTime: " + actualTrackingTime)
+            // CLMPlayer.alert("here is the time diff :" + timeDifference + "Enable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
         } else {
             timeDifference = diff_minutes(
                 currentTime,
                 actualTrackingTime)
-            // CLMPlayer.alert("Data Added, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide,)
+            calculatedTme = 0
+            CLMPlayer.alert("here is the time diff :" + timeDifference + "Data Added, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
         }
 
         if (timeDifference >= 1) {
@@ -415,7 +441,7 @@
                     if (trackingValue) {
                         if (enableTrackingAfterPause) {
                             trackClickStream(new Date(), disabledTrackingTime, "disable")
-                        } else if (disablePlayButton) {
+                        } else if (disablePlayButton && loopThroughPausebutton) {
                             trackClickStream(new Date(), enableTrackingTime, "enable")
                         } else {
                             trackClickStream(new Date(), previousSlide.start)
@@ -666,7 +692,7 @@
                 if (trackingValue) {
                     if (enableTrackingAfterPause) {
                         trackClickStream(new Date(), disabledTrackingTime, "disable")
-                    } else if (disablePlayButton) {
+                    } else if (disablePlayButton && loopThroughPausebutton) {
                         trackClickStream(new Date(), enableTrackingTime, "enable")
                     } else {
                         trackClickStream(new Date(), previousSlide.start)
