@@ -251,7 +251,7 @@
         currentValueImage = document.querySelectorAll(".navImageAnchor");
         if (sequenceData[0].trim() == undefined || sequenceData[0].trim() == "") {
             //if no data is present for a HCP then first slide will be the first slide
-            updateIfram(sequenceData[0]);
+            updateIfram("Iframe could out : " + sequenceData[0]);
         }
         //to get the unique prodict and pass it calldetails to identify unshared products
         try {
@@ -313,7 +313,6 @@
     //this function will invoke on disabling the tracking
     function disableTracking() {
         if (disablePlayButton && loopThroughPausebutton) {
-            CLMPlayer.alert(calculatedTme + "currentTime" + new Date() + "lastdiabled" + disabledTrackingTime)
             calculatedTme = calculatedTme + diff_minutes(
                 new Date(),
                 disabledTrackingTime)
@@ -338,7 +337,6 @@
     function enableTracking() {
         if (enableTrackingAfterPause) {
             disabledTrackingTime = new Date();
-            CLMPlayer.alert("changed from pause to play on same slide")
         }
         disablePlayButton = true
         trackingValue = true;
@@ -357,7 +355,7 @@
             timeDifference = calculatedTme;
             calculatedTme = 0;
             // disablePlayButton = false
-            CLMPlayer.alert("here is the time diff :" + timeDifference + " Disable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
+            // CLMPlayer.alert("here is the time diff :" + timeDifference + " Disable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
         } else if (trackingEvent == "enable") { //if enable tracking condition applied
             trackingValue = true; //this is the global variable
             loopThroughPausebutton = false
@@ -368,17 +366,16 @@
                 actualTrackingTime
             );
             calculatedTme = 0
-            CLMPlayer.alert(timeDifference + "calculated time is :" + calculatedTme + " currenttime: " + currentTime + "actualTrackingTime: " + actualTrackingTime)
+            // CLMPlayer.alert(timeDifference + "calculated time is :" + calculatedTme + " currenttime: " + currentTime + "actualTrackingTime: " + actualTrackingTime)
             // CLMPlayer.alert("here is the time diff :" + timeDifference + "Enable condition applied, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
         } else {
             timeDifference = diff_minutes(
                 currentTime,
                 actualTrackingTime)
             calculatedTme = 0
-            CLMPlayer.alert("here is the time diff :" + timeDifference + "Data Added, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
+            // CLMPlayer.alert("here is the time diff :" + timeDifference + "Data Added, actual time is" + actualTrackingTime + "| EndTime is: " + currentTime + "lastSlide is :" + previousSlide.slide + previousSlide.start)
         }
-
-        if (timeDifference >= 1) {
+        if (timeDifference > 0.9) {
             if (callIDUpsert) {
                 let productOrder = {
                     productId: previousSlide.product,
@@ -420,6 +417,7 @@
     }
 
     // THis is the main logic which loads the iframe based on events
+    let updateIframeCount = 0
     function updateIfram(slideIndex, anchorId, slideName) {
         let slide = slideName ? slideName : slideIndex;
         // console.log("THis is the index of slide" + slideIndex);
